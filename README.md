@@ -32,7 +32,10 @@ wrapped.get('type') // "user";
 wrapped.get('firstName') // "Ricky";
 
 // relationships
-wrapped.get('job') // {id: "1", name: "CEO"};
+wrapped.get('job') // {id: "1", type: "jobs"};
+
+// included relationships
+wrapped.get('job.name') // "ceo"
 ```
 
 If wrapping an array response, [supported array methods](#supported-array-methods) will "just work", but note that these will return the JA response and not the `JaQuery` child object:
@@ -40,6 +43,7 @@ If wrapping an array response, [supported array methods](#supported-array-method
 ```js
 let ceo = wrapped.filter((user) => user.get('job.id') === '1');
 let ceo = wrapped.filterBy('id', '1');
+let ceo = wrapped.findBy('job.name', 'ceo');
 let employees = wrapped.rejectBy('id', '1');
 ```
 
@@ -83,10 +87,14 @@ test('it should ...', function(assert) {
   + [`shouldUnwrapArrayMethods`](#shouldunwraparraymethods)
   + [`response`](#response)
   + [`data`](#data)
+  + [`included`](#included)
+  + [`links`](#links)
   + [`attributes`](#attributes)
   + [`relationships`](#relationships)
   + [`isObject`](#isobject)
   + [`isArray`](#isarray)
+  + [`hasIncluded`](#hasincluded)
+  + [`hasRelationships`](#hasrelationships)
 * Methods
   + [`get`](#get)
   + [`unwrap`](#unwrap)
@@ -149,6 +157,18 @@ Alias for the `data` key on the JA response.
 
 **[⬆️ back to top](#api)**
 
+#### `included`
+
+Alias for the `included` key on the JA response.
+
+**[⬆️ back to top](#api)**
+
+#### `links`
+
+Alias for the `links` key on the JA response.
+
+**[⬆️ back to top](#api)**
+
 #### `attributes`
 
 Alias for the `attributes` key on the JA response.
@@ -170,6 +190,18 @@ Returns `true` if the wrapped response is an object response.
 #### `isArray`
 
 Returns `true` if the wrapped response is an array response.
+
+**[⬆️ back to top](#api)**
+
+#### `hasIncluded`
+
+Returns `true` if the wrapped response has included relationships..
+
+**[⬆️ back to top](#api)**
+
+#### `hasRelationships`
+
+Returns `true` if the wrapped response has relationships.
 
 **[⬆️ back to top](#api)**
 
