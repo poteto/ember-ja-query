@@ -49,11 +49,12 @@ Using with `ember-cli-pretender` in an acceptance test:
 
 ```js
 import { test } from 'qunit';
+import Pretender from 'Pretender';
 import moduleForAcceptance from 'my-app/tests/helpers/module-for-acceptance';
 import JaQuery from 'my-app/tests/ember-ja-query';
 import usersResponse from '...';
 
-moduleForAcceptance('Acceptance | schedule/display/month', {
+moduleForAcceptance('Acceptance | some/route', {
   beforeEach() {
     this.server = new Pretender(function() {
       this.get(users, function({ queryParams }) {
