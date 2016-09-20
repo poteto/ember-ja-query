@@ -4,55 +4,89 @@ const {
   A: emberArray,
   String: { w, dasherize },
   Object: EmberObject,
-  computed: { alias },
+  computed: { bool, oneWay },
   computed,
   assert,
   get,
   isPresent,
   set,
+  setProperties,
   typeOf
 } = Ember;
+const assign = Ember.assign || Ember.merge;
 const childKey = '__children__';
+const includedKey = '__included__';
 const supportedArrayMethods = w('filter reject find filterBy rejectBy findBy');
+
+function computedTypeOf(dependentKey, type) {
+  return computed(dependentKey, function() {
+    return typeOf(get(this, dependentKey)) === type;
+  }).readOnly();
+}
 
 export const JaQueryObject = EmberObject.extend({
   __isJaQueryObject__: true,
   response: null,
   shouldUnwrapArrayMethods: true,
 
-  data: alias('response.data'),
-  attributes: alias('data.attributes'),
+  data: oneWay('response.data'),
+  included: oneWay('response.included'),
+  links: oneWay('response.links'),
+  attributes: oneWay('data.attributes'),
 
-  relationships: computed('data.relationships', function() {
+  relationships: computed('data.relationships', 'hasIncluded', 'included.[]', function() {
     let flattened = {};
     let relationships = get(this, 'data.relationships');
 
-    for (let key in relationships) {
-     flattened[key] = relationships[key].data;
+    // map included to relationships
+    if (get(this, 'hasIncluded')) {
+      for (let key in relationships) {
+        let { data } = relationships[key];
+
+        if (typeOf(data) === 'array') {
+          flattened[key] = this._mapMany(data);
+        } else {
+          flattened[key] = this._mapOne(data);
+        }
+      }
+    } else {
+      for (let key in relationships) {
+        flattened[key] = relationships[key].data;
+      }
     }
 
     return flattened;
   }),
 
-  isObject: computed('data', function() {
-    return typeOf(get(this, 'data')) === 'object';
-  }).readOnly(),
-
-  isArray: computed('data', function() {
-    return typeOf(get(this, 'data')) === 'array';
-  }).readOnly(),
+  isObject: computedTypeOf('data', 'object'),
+  isArray: computedTypeOf('data', 'array'),
+  hasIncluded: bool('included'),
+  hasRelationships: bool('relationships'),
 
   init() {
     this._super(...arguments);
     let isArray = get(this, 'isArray');
     let isObject = get(this, 'isObject');
+    let hasIncluded = get(this, 'hasIncluded');
     set(this, 'response', this.response);
 
     if (isArray) {
-     set(this, childKey, emberArray(get(this, 'data').map((data) => new JaQuery({ data }))));
-     supportedArrayMethods.forEach((method) => {
-       this[method] = (...args) => this._proxyArrayMethod(method, ...args);
-     });
+      set(this, childKey, emberArray(get(this, 'data').map((data) => new JaQuery({ data }))));
+      supportedArrayMethods.forEach((method) => {
+        this[method] = function proxyArrayMethod(...args) {
+          return this._proxyArrayMethod(method, ...args);
+        };
+      });
+    }
+
+    if (hasIncluded) {
+      set(this, includedKey, emberArray(get(this, 'included').map((data) => new JaQuery({ data }))));
+      get(this, childKey).forEach((child) => {
+        setProperties(child, {
+          included: get(this, 'included'),
+          [includedKey]: get(this, includedKey)
+        });
+      });
     }
 
     assert('Not a valid JSON API response', isObject || isArray);
@@ -142,6 +176,18 @@ export const JaQueryObject = EmberObject.extend({
     }
 
     return result;
+  },
+
+  _mapOne(data) {
+    let { id, type } = data;
+    let included = get(this, 'included');
+    let found = emberArray(emberArray(included).filterBy('type', type)).findBy('id', id);
+
+    return new JaQuery({ data: found });
+  },
+
+  _mapMany(data) {
+    return data.map((d) => this._mapOne(d));
   }
 });
 
