@@ -17,7 +17,8 @@ import JaQuery from 'my-app/tests/ember-ja-query';
 import objectResponse from '...';
 import arrayResponse from '...';
 
-let wrapped = new JaQuery(fakeJsonApiResponse);
+let user = new JaQuery(objectResponse);
+let users = new JaQuery(arrayResponse);
 ```
 
 You can wrap a JA response for both a single item or many items. Once wrapped, you can query the response like you would any Ember Object:
